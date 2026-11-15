@@ -377,3 +377,7 @@ button.large { width: 100%; margin: 4px 0 6px; padding: 12px; }
 .barre button { flex: 1 1 0; min-width: 0; font-size: clamp(10px, 3.1vw, 12px); }
 .barre button span { display: block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .barre svg { width: clamp(21px, 6.4vw, 25px); height: clamp(21px, 6.4vw, 25px); }
+
+/* Cartes dorées : bandeau or, étoiles inconnues */
+.cv.doree .cv-nom { background: linear-gradient(180deg, #f5c542, #d79a00); color: #4a3200; text-shadow: none; }
+.mini.doree { --bandeau: #d79a00; }

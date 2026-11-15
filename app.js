@@ -3,7 +3,7 @@
 // Données partagées via un Google Apps Script (voir apps-script/). Sans serveur
 // configuré, l'app tourne en mode démo avec des données fictives locales.
 
-var VERSION = "1.1";
+var VERSION = "1.2";
 var COULEURS = ["#e4572e", "#2e86ab", "#7a5195", "#2a9d8f", "#d97706", "#c2185b", "#5c6bc0", "#43a047", "#8d6e63", "#00838f"];
 
 // ---------- Stockage local (tolérant aux navigateurs qui le bloquent) ----------
@@ -70,9 +70,9 @@ function catalogue() {
     var a = i + 1, s = surcharges[String(a)];
     var cartes = alb[2].map(function (c, j) {
       var id = a + "-" + (j + 1), o = surcharges[id];
-      var base = c ? { nom: c[0], etoiles: c[1], doree: false } : { nom: "", etoiles: 0, doree: false };
+      var base = c ? { nom: c[0], etoiles: c[1], doree: false } : { nom: "", etoiles: 0, doree: true };
       if (o) base = { nom: o.nom || base.nom, etoiles: o.etoiles || base.etoiles, doree: o.doree };
-      return { id: id, album: a, num: j + 1, emoji: alb[0], nom: base.nom || "Carte " + (j + 1), inconnue: !base.nom, etoiles: base.etoiles, doree: base.doree };
+      return { id: id, album: a, num: j + 1, emoji: alb[0], nom: base.nom || (base.doree ? "Carte dorée" : "Carte " + (j + 1)), inconnue: !base.nom, etoiles: base.etoiles, doree: base.doree };
     });
     return { num: a, emoji: alb[0], nom: (s && s.nom) || alb[1], cartes: cartes };
   });
@@ -188,9 +188,10 @@ function etatDemo() {
   ["Alice", "Bruno", "Chloé"].forEach(function (p, i) { TT.appliquer(e, { type: "joueur", prenom: p, couleur: COULEURS[i] }); });
   CATALOGUE_DEFAUT.albums.forEach(function (alb, i) {
     alb[2].forEach(function (c, j) {
-      var id = (i + 1) + "-" + (j + 1), rare = c[1];
+      var id = (i + 1) + "-" + (j + 1), rare = c ? c[1] : 5;
       ["Alice", "Bruno", "Chloé"].forEach(function (p) {
         var r = alea(), n = r < 0.08 + rare * 0.06 ? 0 : r < 0.62 ? 1 : r < 0.85 ? 2 : 3;
+        if (!c && n > 1) n = 1;
         if (n) TT.appliquer(e, { type: "quantite", prenom: p, carte: id, quantite: n });
       });
     });
@@ -206,7 +207,7 @@ function etatDemo() {
 function premiereCarte(e, receveur, donneur, deja) {
   for (var a = 18; a >= 1; a--) for (var n = 9; n >= 1; n--) {
     var id = a + "-" + n;
-    if (!deja[id] && !TT.quantite(e, receveur, id) && TT.quantite(e, donneur, id) > 1) return id;
+    if (!deja[id] && CATALOGUE_DEFAUT.albums[a - 1][2][n - 1] && !TT.quantite(e, receveur, id) && TT.quantite(e, donneur, id) > 1) return id;
   }
   return "1-1";
 }
@@ -560,7 +561,7 @@ function ongletReglages() {
       (S.derniereSync ? '<br><small>Dernière synchro : ' + ilYa(S.derniereSync) + "</small>" : "") + "</p>" +
       '<button data-a="synchro">Synchroniser maintenant</button></section>') +
     '<section class="bloc"><h2>Saison</h2>' +
-      "<p>" + esc(CATALOGUE_DEFAUT.saison) + " · 18 albums de 9 cartes. Les noms des cartes dorées sont à compléter : touche la carte puis « Corriger ».</p>" +
+      "<p>" + esc(CATALOGUE_DEFAUT.saison) + " · 18 albums de 9 cartes. Les noms sont ceux de la version anglaise et les noms d'albums sont à compléter : touche une carte puis « Corriger » (la correction vaut pour toute la famille). Les 30 cartes dorées ne s'échangent pas.</p>" +
       '<button class="discret danger" data-a="nouvelle-saison">Nouvelle saison : tout remettre à zéro</button></section>' +
     '<section class="bloc"><h2>Serveur</h2>' +
       (DEMO ? "<p>Aucun serveur configuré : l'app est en <b>mode démo</b>. Colle ici l'adresse du script Google et la clé famille (ou ouvre simplement le lien d'invitation).</p>"
