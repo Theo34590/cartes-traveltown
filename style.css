@@ -381,3 +381,5 @@ button.large { width: 100%; margin: 4px 0 6px; padding: 12px; }
 /* Cartes dorées : bandeau or, étoiles inconnues */
 .cv.doree .cv-nom { background: linear-gradient(180deg, #f5c542, #d79a00); color: #4a3200; text-shadow: none; }
 .mini.doree { --bandeau: #d79a00; }
+.bandeau .lien-invit { margin-top: 8px; }
+.bandeau .lien-invit input { background: var(--surface); }

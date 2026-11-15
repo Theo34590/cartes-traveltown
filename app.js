@@ -3,7 +3,7 @@
 // Données partagées via un Google Apps Script (voir apps-script/). Sans serveur
 // configuré, l'app tourne en mode démo avec des données fictives locales.
 
-var VERSION = "1.2";
+var VERSION = "1.3";
 var COULEURS = ["#e4572e", "#2e86ab", "#7a5195", "#2a9d8f", "#d97706", "#c2185b", "#5c6bc0", "#43a047", "#8d6e63", "#00838f"];
 
 // ---------- Stockage local (tolérant aux navigateurs qui le bloquent) ----------
@@ -19,9 +19,24 @@ var LS = {
     if (h.get("api") !== LS.get("api", "")) { LS.set("etat", null); LS.set("file", []); }
     LS.set("api", h.get("api"));
     LS.set("cle", h.get("cle") || "");
-    history.replaceState(null, "", location.pathname + location.search);
+  } else if (LS.get("api", "")) {
+    // Le lien reste dans l'adresse : « Ajouter à l'écran d'accueil » le conserve.
+    // Indispensable sur iPhone, où l'icône d'écran d'accueil a son propre stockage.
+    history.replaceState(null, "", location.pathname + location.search + "#api=" +
+      encodeURIComponent(LS.get("api", "")) + "&cle=" + encodeURIComponent(LS.get("cle", "")));
   }
 })();
+
+// Lit un lien d'invitation collé (adresse complète ou seulement la partie après #).
+function lireInvitation(texte) {
+  var t = String(texte || "").trim(), i = t.indexOf("#");
+  var h = new URLSearchParams(i >= 0 ? t.slice(i + 1) : t);
+  var api = h.get("api") || "", cle = h.get("cle") || "";
+  return /^https:\/\/script\.google(usercontent)?\.com\//.test(api) && cle ? { api: api, cle: cle } : null;
+}
+function formLien() {
+  return '<form class="ajout lien-invit" data-f="lien"><input id="lien-colle" name="lien" placeholder="Colle ici ton lien d’invitation" autocomplete="off" required><button class="principal">Rejoindre</button></form>';
+}
 
 var S = {
   api: LS.get("api", ""),
@@ -262,7 +277,7 @@ function rendre() {
         '<div class="titre"><span class="logo">🃏</span><div><b>Échanges de cartes</b><small>' + esc(CATALOGUE_DEFAUT.saison) + "</small></div></div>" +
         '<button class="moi" data-a="onglet" data-o="reglages">' + etatConnexion() + pastille(S.moi) + "</button>" +
       "</header>" +
-      (DEMO ? '<div class="bandeau demo">Mode démo : données fictives, enregistrées seulement sur cet appareil.</div>' : "") +
+      (DEMO ? '<div class="bandeau demo"><b>Mode démo</b> : données fictives. Tu as un lien d’invitation ? Colle-le ici :' + formLien() + "</div>" : "") +
       (S.erreurServeur ? '<div class="bandeau erreur">⚠ ' + esc(S.erreurServeur) + "</div>" : "") +
       '<main class="contenu">' + ({ demandes: ongletDemandes, album: ongletAlbum, echanges: ongletEchanges, famille: ongletFamille, reglages: ongletReglages }[S.onglet] || ongletDemandes)() + "</main>" +
       '<nav class="barre">' +
@@ -303,7 +318,7 @@ function ecranAccueil() {
   return '<div class="accueil">' +
     '<div class="logo-grand">🃏</div><h1>Échanges de cartes</h1>' +
     "<p>Pour savoir qui a quoi dans la famille, et se demander les cartes qui manquent.</p>" +
-    (DEMO ? '<p class="bandeau demo">Mode démo : données fictives sur cet appareil.</p>' : "") +
+    (DEMO ? '<div class="bandeau demo"><b>Mode démo</b> : données fictives sur cet appareil. Pour rejoindre ta famille, ouvre le lien d’invitation reçu, ou colle-le ici :' + formLien() + "</div>" : "") +
     (liste ? "<h2>Qui es-tu ?</h2><div class=\"membres\">" + liste + "</div>" : "<h2>Bienvenue !</h2>") +
     '<form class="ajout" data-f="ajout-moi"><input id="nouveau-prenom" name="prenom" maxlength="30" placeholder="' + (liste ? "Pas dans la liste ? Ton prénom" : "Ton prénom") + '" autocomplete="given-name" required><button class="principal">C\'est moi</button></form>' +
     "</div>";
@@ -718,6 +733,12 @@ document.addEventListener("submit", function (ev) {
     S.edition = false;
     agir({ type: "catalogue", modifs: modifs });
     toast("Catalogue corrigé pour toute la famille");
+  } else if (type === "lien") {
+    var inv = lireInvitation(data.get("lien"));
+    if (!inv) { toast("Ce n'est pas un lien d'invitation complet", "erreur"); return; }
+    LS.set("api", inv.api); LS.set("cle", inv.cle); LS.set("etat", null); LS.set("file", []); LS.set("moi", "");
+    location.replace(location.pathname + "#api=" + encodeURIComponent(inv.api) + "&cle=" + encodeURIComponent(inv.cle));
+    location.reload();
   } else if (type === "config") {
     var api = String(data.get("api") || "").trim(), cle = String(data.get("cle") || "").trim();
     if (api && !/^https:\/\/script\.google(usercontent)?\.com\//.test(api)) { toast("Adresse de script Google attendue", "erreur"); return; }

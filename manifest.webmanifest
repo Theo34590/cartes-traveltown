@@ -2,7 +2,6 @@
   "name": "Échanges de cartes",
   "short_name": "Cartes TT",
   "description": "Suivi familial des cartes TravelTown",
-  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f3f6f5",
