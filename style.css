@@ -388,3 +388,11 @@ button.large { width: 100%; margin: 4px 0 6px; padding: 12px; }
    automatiquement à la saisie et la page reste décalée). */
 html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 input, select, textarea { font-size: 16px !important; }
+
+/* Médaillons d'albums (images privées servies par le serveur famille) */
+img.illu { display: block; border-radius: 50%; object-fit: cover; aspect-ratio: 1; }
+.cv-image img.illu { width: 72%; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+.cv.grand .cv-image img.illu { width: 66%; }
+.mini i img.illu { width: 22px; height: 22px; border: 1px solid rgba(255,255,255,.8); }
+.tete-illu { flex: none; display: grid; place-items: center; width: 40px; height: 40px; font-size: 26px; }
+.tete-illu img.illu { width: 40px; height: 40px; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); }

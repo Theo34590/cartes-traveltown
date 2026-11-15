@@ -1,6 +1,6 @@
 // Cache de l'application pour l'ouvrir même sans réseau. Les appels au serveur
 // Google ne passent pas par ici (autre domaine). Changer VERSION à chaque mise en ligne.
-var VERSION = "cartes-v7";
+var VERSION = "cartes-v8";
 var FICHIERS = ["./", "index.html", "style.css?v=7", "catalogue.js?v=7", "logique.js?v=7", "app.js?v=7", "manifest.webmanifest", "icon.svg", "icon-180.png", "icon-192.png"];
 self.addEventListener("install", function (e) {
   e.waitUntil(caches.open(VERSION).then(function (c) { return c.addAll(FICHIERS); }).then(function () { return self.skipWaiting(); }));

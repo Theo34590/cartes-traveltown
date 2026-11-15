@@ -1,31 +1,29 @@
 // Catalogue de la saison en cours : « Poussières d'étoiles effrayantes » (novembre 2026).
-// Relevé le 15/11/2026 sur la liste publique d'un revendeur (version Facebook, noms ANGLAIS :
-// le jeu en français affiche d'autres noms ; la famille peut les corriger dans l'app,
-// fiche de la carte > Corriger, et la correction est partagée avec tout le monde).
-// Format : [emoji, nom de l'album, [[nom de la carte, étoiles] x 9]].
-// null = carte dorée (non échangeable, donc absente des listes de revente ; ces
-// emplacements sont identiques d'une saison à l'autre). Noms d'albums inconnus.
+// Relevé le 15/11/2026 sur les captures d'écran du jeu en français (version Facebook).
+// Format : [emoji, nom de l'album, [[nom de la carte, étoiles, dorée?] x 9]].
+// Le 3e élément « true » marque une carte dorée (cadre jaune, non échangeable entre amis).
+// La famille peut corriger un nom dans l'app (fiche de la carte > Corriger).
 // À chaque nouvelle saison, ce fichier doit être refait (demander à Claude).
 var CATALOGUE_DEFAUT = {
   saison: "Poussières d'étoiles effrayantes",
   albums: [
-    ["🤖", "Album 1", [["Futuristic Farmer",1],["Bot Box",1],["Virtual View",1],["Tool Tech",1],["Digital Dress",1],["Neon Note",1],["Cyber Cap",1],["Power Pour",1],["Hover High",2]]],
-    ["🌌", "Album 2", [["Space Sketch",1],["Digital Doodle",1],["Starlight Serpent",1],["Cosmic Gown",1],["Cosmic Carve",1],["Space Snips",1],["Alien Armor",1],["Broom Beam",2],["Cosmic Canine",2]]],
-    ["🎧", "Album 3", [["Saucer Sparkle",1],["Monster Mixer",1],["Fader Fun",1],["Space Spin",1],["Sonic Squash",1],["Floating Foxtrot",1],["Silver Sweethearts",2],["Vampire Vocals",2],["Party Peak",2]]],
-    ["🛍️", "Album 4", [["Wacky Wake-Up",1],["Hologram Hype",1],["Bot Boutique",1],["Mall Mayhem",1],["Crate Carrier",1],["Super Stretch",2],["Squeaky Scrub",2],["Whirling Wonder",2],["Tidy Trouble",2]]],
-    ["🧪", "Album 5", [["Boo Buffet",1],["Slimy Soup",1],["Mummy Mambo",1],["Sweet Stash",1],["Snappy Selfie",2],["Eerie Elixir",2],["Jiggly Jelly",2],["Treat Trader",2],["Broom Buddies",3]]],
-    ["🍳", "Album 6", [["Galaxy Grill",1],["Tasty Thoughts",1],["Spooky Sundae",1],["Wok Wizard",1],["Tentacle Tantrum",2],["Total Tally",2],["Dish Duty",2],["Wiggly Worms",3],["Dinner Droid",3]]],
-    ["👻", "Album 7", [["Derelict Discovery",1],["Batty Brigade",1],["Frozen Fright",1],["Cheesy Creature",2],["Itsy Intruder",2],["Shadowy Shape",2],["Boxy Beast",2],["Happy Haunting",3],null]],
-    ["🍂", "Album 8", [["Autumn Aurora",1],["Crystal Curiosity",1],["Woolly Window",1],["Leafy Library",2],["Comet Cocoa",2],["Puffy Pause",2],["Handmade Hug",3],null,["Galaxy Gazing",3]]],
-    ["🍄", "Album 9", [["Dome Domain",1],["Fungi Forest",1],["Floating Frond",1],["Funky Fruit",2],["Specimen Showcase",2],["Snapshot Sprout",3],["Sprouting Sphere",3],["Careful Carry",3],null]],
-    ["🐾", "Album 10", [["Rescue Rover",1],["Hungry Hatchlings",1],["Crosswalk Care",1],["Patch-Up Pack",2],["Cooking Company",2],["Healing Hug",3],["Recovery Reading",3],null,null]],
-    ["🚜", "Album 11", [["Floating Farm",1],["Gloves & Gadgets",1],["Prized Pod",2],["Harvest Havoc",2],["Greedy Gobbler",2],["Brilliant Blueprint",3],null,["Field Friend",3],null]],
-    ["🍽️", "Album 12", [["Starry Spread",1],["Roasted Radiance",2],["Dish Debut",2],["Big Bites",2],["Colorful Clink",3],["Plate Prep",3],["Belly Bliss",3],null,null]],
-    ["🍬", "Album 13", [["Gleaming Goodie",1],["Candy Carriers",2],null,["Goblin Goodies",3],["Floating Fluff",4],["Frosted Fancies",4],null,["Melty Mess",4],null]],
-    ["🚨", "Album 14", [["Quiet Quarters",1],["Busy Bridge",2],["Alarm Alert",3],["Wire Wreckers",3],null,["Mischief Mob",4],null,["Hologram Hoax",5],null]],
-    ["🎃", "Album 15", [["Speckled Squash",2],null,["Carving Kit",4],["Gooey Guts",4],["Pumpkin Plot",4],null,["Judging Jitters",4],["Lantern Lineup",5],null]],
-    ["✨", "Album 16", [["Orange Orbiter",3],["Glitter Globe",3],null,["Frosting Flurry",4],null,null,null,["Twinkle Threads",5],["Makeup Masterpiece",5]]],
-    ["🦃", "Album 17", [["Feathered Float",3],null,["Turkey Trimmings",4],["Lucky Lollipop",4],["Drum Dazzle",4],null,null,["Fancy Feathers",5],null]],
-    ["🧸", "Album 18", [["Deal Dome",3],["Toy Tower",4],["Cart Chase",4],["Plush Pick",4],null,["Plush Primate",5],null,null,null]]
+    ["🤖", "Sélection Pulse", [["Fermier du futur",1],["Boîte de robots",1],["Vue virtuelle",1],["Techno-gadgets",1],["Robe numérique",1],["Note néon",1],["Casquette cyber",1],["Recharge express",1],["En hauteur",2]]],
+    ["🌌", "Tenue astro", [["Croquis de l'espace",1],["Gribouillage numérique",1],["Serpent stellaire",1],["Robe cosmique",1],["Sculpture cosmique",1],["Ciseaux spatiaux",1],["Armure alien",1],["Rayon-balai",2],["Chien cosmique",2]]],
+    ["🎧", "Basse spatiale", [["Soucoupe scintillante",1],["Mélangeur de monstres",1],["Plaisir du fader",1],["Roue spatiale",1],["Squash sonique",1],["Foxtrot flottant",1],["Tourtereaux d'argent",2],["Chants de vampire",2],["Comble de la fête",2]]],
+    ["🛍️", "Accès cosmique", [["Réveil loufoque",1],["Folie des hologrammes",1],["Boutique des robots",1],["Folie au centre commercial",1],["Porteur de caisses",1],["Super extensible",2],["Frottage grinçant",2],["Tourbillon de merveilles",2],["Tracas du rangement",2]]],
+    ["👻", "Repaire hanté", [["Buffet fantôme",1],["Soupe gluante",1],["Mambo de la momie",1],["Trésor sucré",1],["Selfie express",2],["Élixir mystérieux",2],["Gelée gigotante",2],["Marchand de gourmandises",2],["Compagnons de balai",3]]],
+    ["🍳", "En-cas étoilés", [["Grill galactique",1],["Pensées gourmandes",1],["Coupe givrée d'Halloween",1],["Génie du wok",1],["Folie des tentacules",2],["Total",2],["Corvée de vaisselle",2],["Vers frétillants",3],["Robot cuisinier",3]]],
+    ["🦇", "Frontière farfelue", [["Trésors oubliés",1],["Brigade des chauves-souris",1],["Frissons glacés",1],["Créature fromagère",2],["Petit intrus",2],["Forme dans l'ombre",2],["Bestiole en carton",2],["Joyeux Halloween !",3],["Crâne soyeux",3,true]]],
+    ["☕", "Cosmos cocooning", [["Aurore automnale",1],["Curiosité de cristal",1],["Fenêtre en laine",1],["Bibliothèque verdoyante",2],["Cacao comète",2],["Pause douillette",2],["Câlin fait main",3],["Fête champêtre",3,true],["Sous les étoiles",3]]],
+    ["🌱", "Pousses de l'espace", [["Domaine du dôme",1],["Forêt aux champignons",1],["Fronde flottante",1],["Fruits funky",2],["Galerie des spécimens",2],["Pousse instantanée",3],["Sphère germante",3],["Transport en douceur",3],["Plante gourmande",3,true]]],
+    ["🦎", "Soutien stellaire", [["Sauver Rover",1],["Petits gloutons affamés",1],["Sécurité au passage piéton",1],["Pack de réparation",2],["Compagnie de cuisine",2],["Câlin guérisseur",3],["Lecture de récupération",3],["Café cosmique",3,true],["Cadeau pétales",4,true]]],
+    ["🍂", "Verger orbital", [["Ferme flottante",1],["Gants et gadgets",1],["Cosse précieuse",2],["Récoltes en folie",2],["Glouton vorace",2],["Plan génial",3],["Travaux de soudure",3,true],["Pote des prés",3],["Bienvenue à tire-d'aile",4,true]]],
+    ["🍽️", "Galaxie reconnaissante", [["Pluie d'étoiles",1],["Splendeur rôtie",2],["Nouveau plat",2],["Grosses bouchées",2],["Tintement coloré",3],["Dressage des plats",3],["Plaisir gourmand",3],["Cerceau de récolte",4,true],["Groupe rayonnant",4,true]]],
+    ["🍬", "Sortie spatiale sucrée", [["Cadeau étincelant",1],["Porteurs de bonbons",2],["Cadeau du perron",3,true],["Butin de gobelins",3],["Duvet volant",4],["Douceurs givrées",4],["Aperçu du portail",4,true],["Fondue fondante",4],["Coup de mou sucré",5,true]]],
+    ["🚨", "Folie à la station", [["Coin tranquille",1],["Pont animé",2],["Alerte d'alarme",3],["Casseurs de câbles",3],["Rush dans les couloirs",4,true],["Bande de chenapans",4],["Plan du projecteur",4,true],["Supercherie holographique",5],["Trio triomphant",5,true]]],
+    ["🎃", "Jeux des gourdes", [["Courge tachetée",2],["Récolte abondante",3,true],["Kit de sculpture",4],["Tripes gluantes",4],["Champ de citrouilles",4],["Coups de dents",4,true],["Le stress du jury",4],["Farandole de lanternes",5],["Gloire des courges",5,true]]],
+    ["🚀", "Halloween flottant", [["Satellite orange",3],["Globe scintillant",3],["Envol des courges",3,true],["Tempête de glaçage",4],["Cascade de bonbons",4,true],["Fièvre des lanternes",4,true],["Squelette collant",5,true],["Fils scintillants",5],["Chef-d'œuvre maquillage",5]]],
+    ["🦃", "Festin gourmand", [["Bouée à plumes",3],["Chapeau auto-stoppeur",3,true],["Garnitures de dinde",4],["Sucette porte-bonheur",4],["Folie des tambours",4],["Joie des confettis",5,true],["Amuseur trémoussant",5,true],["Plumes fantaisie",5],["Rugissement de la rockstar",5,true]]],
+    ["🧸", "Chariots cosmiques", [["Dôme des bons plans",3],["Tour de jouets",4],["Chasse au chariot",4],["Choix de peluche",4],["Fièvre des héros",4,true],["Primate en peluche",5],["Paiement de cochonnet",5,true],["Compte à rebours de la caisse",5,true],["Amis à poils pour toujours",5,true]]]
   ]
 };
