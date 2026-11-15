@@ -1,9 +1,10 @@
 // Cache de l'application pour l'ouvrir même sans réseau. Les appels au serveur
 // Google ne passent pas par ici (autre domaine). Changer VERSION à chaque mise en ligne.
-var VERSION = "cartes-v8";
-var FICHIERS = ["./", "index.html", "style.css?v=7", "catalogue.js?v=7", "logique.js?v=7", "app.js?v=7", "manifest.webmanifest", "icon.svg", "icon-180.png", "icon-192.png"];
+var VERSION = "cartes-v9";
+var V = "?v=9"; // même numéro que dans index.html
+var FICHIERS = ["./", "index.html", "style.css" + V, "catalogue.js" + V, "logique.js" + V, "app.js" + V, "manifest.webmanifest", "icon.svg", "icon-180.png", "icon-192.png"];
 self.addEventListener("install", function (e) {
-  e.waitUntil(caches.open(VERSION).then(function (c) { return c.addAll(FICHIERS); }).then(function () { return self.skipWaiting(); }));
+  e.waitUntil(caches.open(VERSION).then(function (c) { return c.addAll(FICHIERS.map(function (f) { return new Request(f, { cache: "reload" }); })); }).then(function () { return self.skipWaiting(); }));
 });
 self.addEventListener("activate", function (e) {
   e.waitUntil(caches.keys().then(function (cles) {
@@ -15,7 +16,11 @@ self.addEventListener("fetch", function (e) {
   if (e.request.method !== "GET" || new URL(e.request.url).origin !== location.origin) return;
   // no-cache : toujours redemander au serveur s'il y a plus récent (sinon le
   // navigateur garde l'ancienne page jusqu'à 10 min et l'app n'est pas à jour).
-  e.respondWith(fetch(e.request, { cache: "no-cache" }).then(function (r) {
+  // Nouvelle requête construite depuis l'URL : passer des options à une requête de
+  // navigation (ouverture de la page) est refusé par Chrome et Safari, ce qui
+  // renvoyait la page en cache, donc l'ancienne version.
+  e.respondWith(fetch(new Request(e.request.url, { cache: "no-cache", credentials: "same-origin" })).then(function (r) {
+    if (!r.ok) return r;
     var copie = r.clone();
     caches.open(VERSION).then(function (c) { c.put(e.request, copie); });
     return r;
