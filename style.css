@@ -383,3 +383,8 @@ button.large { width: 100%; margin: 4px 0 6px; padding: 12px; }
 .mini.doree { --bandeau: #d79a00; }
 .bandeau .lien-invit { margin-top: 8px; }
 .bandeau .lien-invit input { background: var(--surface); }
+
+/* Pas de zoom : double-tap désactivé, et champs en 16 px (sinon l'iPhone zoome
+   automatiquement à la saisie et la page reste décalée). */
+html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+input, select, textarea { font-size: 16px !important; }

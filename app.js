@@ -3,7 +3,7 @@
 // Données partagées via un Google Apps Script (voir apps-script/). Sans serveur
 // configuré, l'app tourne en mode démo avec des données fictives locales.
 
-var VERSION = "1.3";
+var VERSION = "1.4";
 var COULEURS = ["#e4572e", "#2e86ab", "#7a5195", "#2a9d8f", "#d97706", "#c2185b", "#5c6bc0", "#43a047", "#8d6e63", "#00838f"];
 
 // ---------- Stockage local (tolérant aux navigateurs qui le bloquent) ----------
@@ -766,3 +766,9 @@ if (!DEMO) {
   window.addEventListener("online", function () { planifierEnvoi(0); synchroniser(); });
 }
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(function () {});
+
+// Safari iPhone ignore « user-scalable=no » : on bloque le pincement à la main.
+["gesturestart", "gesturechange", "gestureend"].forEach(function (t) {
+  document.addEventListener(t, function (e) { e.preventDefault(); }, { passive: false });
+});
+document.addEventListener("touchmove", function (e) { if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
