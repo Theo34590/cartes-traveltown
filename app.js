@@ -3,7 +3,7 @@
 // Données partagées via un Google Apps Script (voir apps-script/). Sans serveur
 // configuré, l'app tourne en mode démo avec des données fictives locales.
 
-var VERSION = "1.6";
+var VERSION = "1.7";
 var COULEURS = ["#e4572e", "#2e86ab", "#7a5195", "#2a9d8f", "#d97706", "#c2185b", "#5c6bc0", "#43a047", "#8d6e63", "#00838f"];
 
 // ---------- Stockage local (tolérant aux navigateurs qui le bloquent) ----------
@@ -54,6 +54,9 @@ var S = {
   enVol: 0, enLigne: true, erreurServeur: "", derniereSync: LS.get("sync", null)
 };
 var DEMO = !S.api;
+S.brouillon = "";                  // message en cours de saisie (survit aux rafraîchissements)
+S.luChat = LS.get("lu-chat", "");  // date du dernier message lu
+S.vusChat = -1;                    // nombre de messages affichés (pour défiler en bas)
 // Médaillons d'albums : privés, stockés dans le Google Sheet et servis avec la clé famille.
 var IMAGES = DEMO ? {} : LS.get("images", {});
 function illu(album) {
@@ -233,6 +236,10 @@ function etatDemo() {
     vues[id] = 1;
     TT.appliquer(e, { type: "demande", id: "demo" + k, de: x[0], carte: id });
   });
+  var t = Date.now() - 3 * 3600e3;
+  [["Bruno", "Qui a la carte dorée de l’album 7 ? Je bloque dessus 😅"], ["Chloé", "Pas moi… mais je t’envoie Petit intrus ce soir !"], ["Bruno", "Merci 🙏"]].forEach(function (m, k) {
+    TT.appliquer(e, { type: "message", id: "demo-msg" + k, de: m[0], texte: m[1] }, new Date(t + k * 600e3).toISOString());
+  });
   return e;
 }
 function premiereCarte(e, receveur, donneur, deja) {
@@ -267,6 +274,7 @@ function manquantesAlbum(prenom, album) {
 
 // ---------- Rendu ----------
 var ICONES = {
+  chat: '<svg viewBox="0 0 24 24"><path d="M4 5.5h16v10H10l-4.5 3.5v-3.5H4z"/><circle cx="8.5" cy="10.5" r=".6"/><circle cx="12" cy="10.5" r=".6"/><circle cx="15.5" cy="10.5" r=".6"/></svg>',
   demandes: '<svg viewBox="0 0 24 24"><path d="M5 4h14v12H9l-4 4z"/><path d="M9 9h6M9 12h4"/></svg>',
   album: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="8" height="11" rx="1.5"/><rect x="13" y="4" width="8" height="11" rx="1.5"/><path d="M5 19h14"/></svg>',
   echanges: '<svg viewBox="0 0 24 24"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>',
@@ -295,11 +303,12 @@ function rendre() {
       "</header>" +
       (DEMO ? '<div class="bandeau demo"><b>Mode démo</b> : données fictives. Tu as un lien d’invitation ? Colle-le ici :' + formLien() + "</div>" : "") +
       (S.erreurServeur ? '<div class="bandeau erreur">⚠ ' + esc(S.erreurServeur) + "</div>" : "") +
-      '<main class="contenu">' + ({ demandes: ongletDemandes, album: ongletAlbum, echanges: ongletEchanges, famille: ongletFamille, reglages: ongletReglages }[S.onglet] || ongletDemandes)() + "</main>" +
+      '<main class="contenu' + (S.onglet === "chat" ? " contenu-chat" : "") + '">' + ({ demandes: ongletDemandes, album: ongletAlbum, echanges: ongletEchanges, chat: ongletChat, famille: ongletFamille, reglages: ongletReglages }[S.onglet] || ongletDemandes)() + "</main>" +
       '<nav class="barre">' +
         boutonNav("demandes", "Demandes", aider) +
         boutonNav("album", "Album") +
         boutonNav("echanges", "Échanges") +
+        boutonNav("chat", "Chat", S.onglet === "chat" ? 0 : nonLus()) +
         boutonNav("famille", "Famille") +
         boutonNav("reglages", "Réglages") +
       "</nav>";
@@ -313,6 +322,51 @@ function rendre() {
   if (focus) {
     var el = document.getElementById(focus);
     if (el && el.tagName === "INPUT") { el.focus(); try { el.setSelectionRange(curseur, curseur); } catch (e) {} }
+  }
+  apresRenduChat();
+}
+
+// ---------- Discussion familiale ----------
+function messages() { return (S.etat && S.etat.messages) || []; }
+function nonLus() {
+  return messages().filter(function (m) { return m.de !== S.moi && String(m.cree_le) > S.luChat; }).length;
+}
+function heure(iso) { var d = new Date(iso); return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2); }
+function jourMessage(iso) {
+  var d = new Date(iso), hier = new Date(); hier.setDate(hier.getDate() - 1);
+  if (memeJour(iso)) return "Aujourd’hui";
+  if (d.toDateString() === hier.toDateString()) return "Hier";
+  return d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+}
+function ongletChat() {
+  var liste = messages(), html = '<div class="chat">', jour = "", precedent = "";
+  if (!liste.length) html += '<p class="vide">Pas encore de message. Dis bonjour à la famille !<br><small>Les messages restent 30 jours.</small></p>';
+  liste.forEach(function (m) {
+    var j = jourMessage(m.cree_le), moi = m.de === S.moi, suite = m.de === precedent && j === jour;
+    if (j !== jour) { html += '<div class="chat-jour">' + esc(j) + "</div>"; jour = j; }
+    precedent = m.de;
+    html += '<div class="msg' + (moi ? " moi" : "") + (suite ? " suite" : "") + '">' +
+      (moi ? "" : '<span class="msg-avatar">' + (suite ? "" : pastille(m.de, true)) + "</span>") +
+      '<div class="bulle">' + (moi || suite ? "" : '<b class="msg-nom" style="color:' + esc(couleur(m.de)) + '">' + esc(m.de) + "</b>") +
+      '<span class="msg-texte">' + esc(m.texte) + "</span>" +
+      '<span class="msg-heure">' + heure(m.cree_le) +
+      (moi ? ' <button class="msg-suppr" data-a="suppr-msg" data-id="' + esc(m.id) + '" aria-label="Supprimer ce message">✕</button>' : "") +
+      "</span></div></div>";
+  });
+  html += "</div>" +
+    '<form class="chat-saisie" data-f="chat"><input id="chat-saisie" name="texte" maxlength="500" placeholder="Écrire à la famille…" autocomplete="off" enterkeyhint="send" value="' + esc(S.brouillon) + '">' +
+    '<button class="principal" aria-label="Envoyer">➤</button></form>';
+  return html;
+}
+// Sur l'onglet Chat : tout est lu, et on descend au dernier message quand il en arrive.
+function apresRenduChat() {
+  if (S.onglet !== "chat" || !S.moi || !S.etat) { S.vusChat = -1; return; }
+  var liste = messages(), autresMsg = liste.filter(function (m) { return m.de !== S.moi; });
+  var dernier = autresMsg.length ? String(autresMsg[autresMsg.length - 1].cree_le) : "";
+  if (document.visibilityState === "visible" && dernier > S.luChat) { S.luChat = dernier; LS.set("lu-chat", dernier); }
+  if (liste.length !== S.vusChat) {
+    S.vusChat = liste.length;
+    window.scrollTo(0, document.body.scrollHeight);
   }
 }
 
@@ -632,8 +686,12 @@ function ficheCarte(id) {
 
   if (!c.doree && n === 0) {
     var dm = maDemande(id);
+    // Personne ne l'a : on prévient, pour ne pas encombrer l'écran Demandes de cartes introuvables.
+    var personne = !autres().some(function (j) { return q(j.prenom, id) > 0; });
     html += dm ? '<div class="demande-fiche">⏳ Demandée à la famille ' + ilYa(dm.cree_le) + ' <button class="discret" data-a="statut" data-id="' + esc(dm.id) + '" data-s="annulee">Annuler</button></div>'
-               : '<button class="principal large" data-a="demander" data-id="' + id + '">Demander à la famille</button>';
+         : personne ? '<p class="note-personne">Personne ne possède cette carte dans la famille.</p>' +
+                      '<button class="secondaire large" data-a="demander" data-id="' + id + '">Demander quand même</button>'
+         : '<button class="principal large" data-a="demander" data-id="' + id + '">Demander à la famille</button>';
   }
   var ouverte = demandesOuvertes().filter(function (d) { return d.carte === id && d.de !== S.moi; });
   ouverte.forEach(function (d) {
@@ -664,7 +722,7 @@ document.addEventListener("click", function (ev) {
   if (!el || el.disabled) return;
   var a = el.dataset.a, id = el.dataset.id, p = el.dataset.p;
   ev.preventDefault();
-  if (a === "onglet") { S.onglet = el.dataset.o; LS.set("onglet", S.onglet); S.fiche = null; rendre(); window.scrollTo(0, 0); if (S.onglet === "demandes") synchroniser(); }
+  if (a === "onglet") { S.onglet = el.dataset.o; LS.set("onglet", S.onglet); S.fiche = null; rendre(); window.scrollTo(0, 0); S.vusChat = -1; if (S.onglet === "demandes" || S.onglet === "chat") synchroniser(); }
   else if (a === "filtre") { S.filtre = el.dataset.v; LS.set("filtre", S.filtre); rendre(); }
   else if (a === "rapide") { S.rapide = !S.rapide; rendre(); }
   else if (a === "fiche") { S.fiche = id; S.edition = false; rendre(); }
@@ -700,6 +758,9 @@ document.addEventListener("click", function (ev) {
   else if (a === "supprimer") {
     if (confirm("Retirer " + p + " de la famille ? Ses cartes et ses demandes seront effacées.")) agir({ type: "supprimer_joueur", prenom: p });
   }
+  else if (a === "suppr-msg") {
+    if (confirm("Supprimer ce message pour toute la famille ?")) agir({ type: "supprimer_message", id: id, par: S.moi });
+  }
   else if (a === "editer") { S.edition = true; rendre(); }
   else if (a === "annuler-edition") { S.edition = false; rendre(); }
   else if (a === "partager") {
@@ -729,6 +790,7 @@ document.addEventListener("keydown", function (ev) {
 
 document.addEventListener("input", function (ev) {
   if (ev.target.id === "recherche") { S.recherche = ev.target.value; rendre(); }
+  else if (ev.target.id === "chat-saisie") { S.brouillon = ev.target.value; }
 });
 
 document.addEventListener("submit", function (ev) {
@@ -745,6 +807,15 @@ document.addEventListener("submit", function (ev) {
     if (type === "ajout-moi") { S.moi = existe ? existe.prenom : p; LS.set("moi", S.moi); }
     else if (!existe) toast(p + " ajouté(e)");
     rendre();
+  } else if (type === "chat") {
+    var texte = TT.texteMessage(data.get("texte"));
+    if (!texte) return;
+    if (agir({ type: "message", id: nouvelId(), de: S.moi, texte: texte }, true)) {
+      S.brouillon = "";
+      rendre();
+      var champ = document.getElementById("chat-saisie");
+      if (champ) champ.focus();
+    }
   } else if (type === "catalogue") {
     var id = f.dataset.id, album = id.split("-")[0], modifs = {};
     modifs[id] = { nom: data.get("nom"), etoiles: Number(data.get("etoiles")), doree: !!data.get("doree") };
@@ -782,7 +853,12 @@ window.addEventListener("hashchange", function () { if (location.hash.indexOf("a
 if (!DEMO) {
   if (S.file.length) envoyer(); else synchroniser();
   chargerImages();
-  setInterval(function () { if (document.visibilityState === "visible") synchroniser(); }, 15000);
+  // Toutes les 15 s, et toutes les 5 s quand la discussion est ouverte.
+  var tic = 0;
+  setInterval(function () {
+    tic++;
+    if (document.visibilityState === "visible" && (S.onglet === "chat" || tic % 3 === 0)) synchroniser();
+  }, 5000);
   document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") synchroniser(); });
   window.addEventListener("online", function () { planifierEnvoi(0); synchroniser(); });
 }

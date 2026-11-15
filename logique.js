@@ -5,6 +5,7 @@
 var TT = (function () {
   var STATUTS_FINAUX = { envoyee: 1, refusee: 1, annulee: 1 };
   var CONSERVATION_JOURS = 14;
+  var MESSAGES_JOURS = 30, MESSAGES_MAX = 300, MESSAGE_LONGUEUR = 500;
 
   function prenomPropre(p) {
     return String(p == null ? "" : p).trim().replace(/\s+/g, " ").slice(0, 30);
@@ -21,7 +22,7 @@ var TT = (function () {
     return e;
   }
   function etatVide() {
-    return { joueurs: [], cartes: {}, demandes: [], catalogue: {} };
+    return { joueurs: [], cartes: {}, demandes: [], catalogue: {}, messages: [] };
   }
   function trouverJoueur(etat, prenom) {
     for (var i = 0; i < etat.joueurs.length; i++) {
@@ -66,6 +67,12 @@ var TT = (function () {
     etat.demandes = etat.demandes.filter(function (d) {
       return d.statut === "ouverte" || String(d.maj_le) >= limite;
     });
+    // Discussion : on garde 30 jours et au plus 300 messages.
+    var limiteMsg = new Date(new Date(maintenant).getTime() - MESSAGES_JOURS * 864e5).toISOString();
+    etat.messages = etat.messages.filter(function (m) { return String(m.cree_le) >= limiteMsg; }).slice(-MESSAGES_MAX);
+  }
+  function texteMessage(t) {
+    return String(t == null ? "" : t).replace(/\r\n?/g, "\n").replace(/\n{3,}/g, "\n\n").trim().slice(0, MESSAGE_LONGUEUR);
   }
 
   // Applique une action à l'état (modifié sur place). Lève une erreur "métier"
@@ -73,6 +80,7 @@ var TT = (function () {
   // les rejouer après une coupure réseau ne double rien.
   function appliquer(etat, act, maintenant) {
     maintenant = maintenant || new Date().toISOString();
+    if (!etat.messages) etat.messages = []; // état enregistré avant l'arrivée de la discussion
     var type = act && act.type;
     if (type === "joueur") {
       var p = prenomPropre(act.prenom);
@@ -144,6 +152,17 @@ var TT = (function () {
           doree: m.doree != null ? !!m.doree : !!ancien.doree
         };
       });
+    } else if (type === "message") {
+      if (!act.id) throw erreur("Message sans identifiant");
+      if (etat.messages.some(function (m) { return m.id === String(act.id); })) return; // déjà reçu
+      var auteur = exigerJoueur(etat, act.de), texte = texteMessage(act.texte);
+      if (!texte) throw erreur("Message vide");
+      etat.messages.push({ id: String(act.id), de: auteur, texte: texte, cree_le: maintenant });
+    } else if (type === "supprimer_message") {
+      var msg = etat.messages.filter(function (m) { return m.id === String(act.id); })[0];
+      if (!msg) return; // déjà supprimé
+      if (!memePrenom(msg.de, act.par)) throw erreur("On ne peut supprimer que ses propres messages");
+      etat.messages = etat.messages.filter(function (m) { return m !== msg; });
     } else if (type === "nouvelle_saison") {
       if (act.confirmation !== "NOUVELLE SAISON") throw erreur("Confirmation manquante");
       etat.cartes = {};
@@ -160,7 +179,8 @@ var TT = (function () {
     Joueurs: ["prenom", "couleur", "cree_le"],
     Cartes: ["prenom", "carte", "quantite"],
     Demandes: ["id", "de", "a", "carte", "statut", "cree_le", "maj_le"],
-    Catalogue: ["carte", "nom", "etoiles", "doree"]
+    Catalogue: ["carte", "nom", "etoiles", "doree"],
+    Messages: ["id", "de", "texte", "cree_le"]
   };
   function versLignes(etat) {
     var cartes = [];
@@ -173,7 +193,7 @@ var TT = (function () {
       var e = etat.catalogue[c];
       return { carte: c, nom: e.nom, etoiles: e.etoiles, doree: e.doree ? "oui" : "" };
     });
-    return { Joueurs: etat.joueurs, Cartes: cartes, Demandes: etat.demandes, Catalogue: catalogue };
+    return { Joueurs: etat.joueurs, Cartes: cartes, Demandes: etat.demandes, Catalogue: catalogue, Messages: etat.messages };
   }
   function depuisLignes(l) {
     var etat = etatVide();
@@ -192,6 +212,9 @@ var TT = (function () {
       var c = String(r.carte);
       if (c) etat.catalogue[c] = { nom: String(r.nom || ""), etoiles: Number(r.etoiles) || 0, doree: String(r.doree).toLowerCase() === "oui" || r.doree === true };
     });
+    (l.Messages || []).forEach(function (r) {
+      if (r.id && r.texte !== "") etat.messages.push({ id: String(r.id), de: String(r.de), texte: String(r.texte), cree_le: String(r.cree_le) });
+    });
     return etat;
   }
   function triCarte(a, b) {
@@ -202,7 +225,7 @@ var TT = (function () {
   return {
     appliquer: appliquer, etatVide: etatVide, versLignes: versLignes, depuisLignes: depuisLignes,
     ENTETES: ENTETES, prenomPropre: prenomPropre, memePrenom: memePrenom, quantite: quantite,
-    carteValide: carteValide, triCarte: triCarte
+    carteValide: carteValide, triCarte: triCarte, texteMessage: texteMessage
   };
 })();
 if (typeof module !== "undefined") module.exports = TT;
