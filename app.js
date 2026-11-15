@@ -3,7 +3,7 @@
 // Données partagées via un Google Apps Script (voir apps-script/). Sans serveur
 // configuré, l'app tourne en mode démo avec des données fictives locales.
 
-var VERSION = "1.4";
+var VERSION = "1.5";
 var COULEURS = ["#e4572e", "#2e86ab", "#7a5195", "#2a9d8f", "#d97706", "#c2185b", "#5c6bc0", "#43a047", "#8d6e63", "#00838f"];
 
 // ---------- Stockage local (tolérant aux navigateurs qui le bloquent) ----------
@@ -584,7 +584,7 @@ function ongletReglages() {
       '<form class="config" data-f="config"><input id="cfg-api" name="api" placeholder="https://script.google.com/macros/s/…/exec" value="' + esc(S.api) + '">' +
       '<input id="cfg-cle" name="cle" placeholder="Clé famille" value="' + esc(S.cle) + '"><button>' + (DEMO ? "Se connecter" : "Enregistrer") + "</button></form>" +
       (DEMO ? '<button class="discret" data-a="reinit-demo">Réinitialiser les données de démo</button>' : "") +
-      '<p class="aide">Version ' + VERSION + "</p></section>";
+      '<p class="aide">Version ' + VERSION + " · " + esc(CATALOGUE_DEFAUT.saison) + ' <button class="discret" data-a="recharger">Forcer la mise à jour</button></p></section>';
 }
 
 function ficheCarte(id) {
@@ -693,6 +693,10 @@ document.addEventListener("click", function (ev) {
   }
   else if (a === "copier") { copier(document.getElementById("lien").value); }
   else if (a === "synchro") { synchroniser(true); }
+  else if (a === "recharger") {
+    Promise.resolve(window.caches ? caches.keys().then(function (k) { return Promise.all(k.map(function (c) { return caches.delete(c); })); }) : 0)
+      .then(function () { location.reload(); });
+  }
   else if (a === "nouvelle-saison") {
     var r = prompt("Toutes les cartes de toute la famille seront effacées (les membres restent).\nTape NOUVELLE SAISON pour confirmer :");
     if (r && r.trim().toUpperCase() === "NOUVELLE SAISON") agir({ type: "nouvelle_saison", confirmation: "NOUVELLE SAISON" });
@@ -765,7 +769,15 @@ if (!DEMO) {
   document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") synchroniser(); });
   window.addEventListener("online", function () { planifierEnvoi(0); synchroniser(); });
 }
-if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(function () {});
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(function (reg) {
+    reg.update();
+    // Une nouvelle version vient de s'installer : on recharge une fois pour l'afficher.
+    navigator.serviceWorker.addEventListener("controllerchange", function () {
+      if (!sessionStorage.getItem("tt-maj")) { sessionStorage.setItem("tt-maj", "1"); location.reload(); }
+    });
+  }).catch(function () {});
+}
 
 // Safari iPhone ignore « user-scalable=no » : on bloque le pincement à la main.
 ["gesturestart", "gesturechange", "gestureend"].forEach(function (t) {
