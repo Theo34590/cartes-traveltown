@@ -3,7 +3,7 @@
 // Données partagées via un Google Apps Script (voir apps-script/). Sans serveur
 // configuré, l'app tourne en mode démo avec des données fictives locales.
 
-var VERSION = "1.7";
+var VERSION = "1.8";
 var COULEURS = ["#e4572e", "#2e86ab", "#7a5195", "#2a9d8f", "#d97706", "#c2185b", "#5c6bc0", "#43a047", "#8d6e63", "#00838f"];
 
 // ---------- Stockage local (tolérant aux navigateurs qui le bloquent) ----------
@@ -686,10 +686,11 @@ function ficheCarte(id) {
 
   if (!c.doree && n === 0) {
     var dm = maDemande(id);
-    // Personne ne l'a : on prévient, pour ne pas encombrer l'écran Demandes de cartes introuvables.
-    var personne = !autres().some(function (j) { return q(j.prenom, id) > 0; });
+    // Personne ne l'a en double (on ne peut pas donner son seul exemplaire) : on prévient,
+    // pour ne pas encombrer l'écran Demandes de cartes que personne ne peut envoyer.
+    var personne = !autres().some(function (j) { return q(j.prenom, id) > 1; });
     html += dm ? '<div class="demande-fiche">⏳ Demandée à la famille ' + ilYa(dm.cree_le) + ' <button class="discret" data-a="statut" data-id="' + esc(dm.id) + '" data-s="annulee">Annuler</button></div>'
-         : personne ? '<p class="note-personne">Personne ne possède cette carte dans la famille.</p>' +
+         : personne ? '<p class="note-personne">Personne ne possède cette carte en double dans la famille.</p>' +
                       '<button class="secondaire large" data-a="demander" data-id="' + id + '">Demander quand même</button>'
          : '<button class="principal large" data-a="demander" data-id="' + id + '">Demander à la famille</button>';
   }
